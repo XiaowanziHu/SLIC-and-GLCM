@@ -8,12 +8,12 @@
 using namespace std;
 using namespace cv;
 
-#define Width 935;//Í¼Ïñ¿í¶È
+#define Width 935;//å›¾åƒå®½åº¦
 
-#define GLCM_DIS 3  //»Ò¶È¹²Éú¾ØÕóµÄÍ³¼Æ¾àÀë  
-#define GLCM_CLASS 16 //¼ÆËã»Ò¶È¹²Éú¾ØÕóµÄÍ¼Ïñ»Ò¶ÈÖµµÈ¼¶»¯ 
+#define GLCM_DIS 3  //ç°åº¦å…±ç”ŸçŸ©é˜µçš„ç»Ÿè®¡è·ç¦»  
+#define GLCM_CLASS 16 //è®¡ç®—ç°åº¦å…±ç”ŸçŸ©é˜µçš„å›¾åƒç°åº¦å€¼ç­‰çº§åŒ– 
 
-//¼ÆËã»Ò¶È¹²Éú¾ØÕóËÄ¸ö·½Ïò
+//è®¡ç®—ç°åº¦å…±ç”ŸçŸ©é˜µå››ä¸ªæ–¹å‘
 typedef enum GLCM_ANGLE
 {
 	GLCM_ANGLE_HORIZATION,
@@ -25,47 +25,18 @@ typedef enum GLCM_ANGLE
 int imgOpenCV2SLIC(Mat img, int &height, int &width, int &dim, unsigned int * &image);
 int imgSLIC2openCV(unsigned int *image, int height, int width, int dim, Mat &imgSLIC);
 void creatAlphaMat(Mat &mat);
-void ReadKlabel(string path, string pathOut, const int*klabels);
 int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const int* klabels, int width, int height, int kl);
 
-//ÓÃÊó±êÑ¡È¡ÑµÁ·Ñù±¾
-IplImage* src = 0;
-void on_mouse(int event, int x, int y, int flags, void* ustc)
-{
-	CvFont font;
-	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, CV_AA);//×ÖÌå½á¹¹³õÊ¼»¯  
-
-	ofstream pointfile1, pointfile2;
-	pointfile1.open("examplepoint-daolu-1000", ios::binary | ios::app | ios::in | ios::out);
-	pointfile2.open("examplepoint-daolu-1000-result", ios::binary | ios::app | ios::in | ios::out);
-
-	if ((event == CV_EVENT_LBUTTONDOWN) && (flags))//Êó±ê×ó¼ü°´ÏÂÊÂ¼ş·¢Éú  
-	{
-		int result = 0;
-		CvPoint pt = cvPoint(x, y);//»ñÈ¡µ±Ç°µãµÄºá×İ×ø±êÖµ  
-		char temp[16];
-		sprintf_s(temp, "(%d,%d)", pt.y, pt.x);//´òÓ¡µ±Ç°×ø±êÖµ  
-		//cvPutText(src, temp, pt, &font, cvScalar(0, 0, 255, 0)); //ÔÚÍ¼ÏñÖĞ´òÓ¡µ±Ç°×ø±êÖµ   
-		cvCircle(src, pt, 2, cvScalar(255, 0, 0, 0), CV_FILLED, CV_AA, 0);//ÔÚÔÚÍ¼Ïñµ±Ç°×ø±êµãÏÂ»­Ô²  
-		cvShowImage("src", src);
-		//±£´æ×ø±ê
-		result = pt.y * Width;
-		result += pt.x;
-		pointfile1 << pt.y << " " << pt.x << "\n";
-		pointfile2 << result << "\n";
-	}
-}
-
-//OpenCV MatÍ¼ÏñÊı¾İ×ª»»ÎªSLICÍ¼ÏñÊı¾İ
+//OpenCV Matå›¾åƒæ•°æ®è½¬æ¢ä¸ºSLICå›¾åƒæ•°æ®
 int imgOpenCV2SLIC(Mat img, int &height, int &width, int &dim, unsigned int * &image)
 {
 	int error = 0;
-	if (img.empty()) //ÇëÒ»¶¨¼ì²éÊÇ·ñ³É¹¦¶ÁÍ¼ 
+	if (img.empty()) //è¯·ä¸€å®šæ£€æŸ¥æ˜¯å¦æˆåŠŸè¯»å›¾ 
 	{
 		error = 1;
 	}
 
-	dim = img.channels();//Í¼ÏñÍ¨µÀÊıÄ¿
+	dim = img.channels();//å›¾åƒé€šé“æ•°ç›®
 	height = img.rows;
 	width = img.cols;
 
@@ -113,20 +84,20 @@ int imgOpenCV2SLIC(Mat img, int &height, int &width, int &dim, unsigned int * &i
 
 }
 
-//SLICÍ¼ÏñÊı¾İ×ª»»ÎªOpenCV MatÍ¼ÏñÊı¾İ
+//SLICå›¾åƒæ•°æ®è½¬æ¢ä¸ºOpenCV Matå›¾åƒæ•°æ®
 int imgSLIC2openCV(unsigned int *image, int height, int width, int dim, Mat &imgSLIC)
 {
-	int error = 0;//×ª»»ÊÇ·ñ³É¹¦µÄ±êÖ¾£º³É¹¦Îª0£¬Ê¶±ğÎª1
+	int error = 0;//è½¬æ¢æ˜¯å¦æˆåŠŸçš„æ ‡å¿—ï¼šæˆåŠŸä¸º0ï¼Œè¯†åˆ«ä¸º1
 
 	if (dim == 1)
 	{
 		imgSLIC.create(height, width, CV_8UC1);
-		//±éÀúËùÓĞÏñËØ£¬²¢ÉèÖÃÏñËØÖµ 
+		//éå†æ‰€æœ‰åƒç´ ï¼Œå¹¶è®¾ç½®åƒç´ å€¼ 
 		for (int j = 0; j< height; ++j)
 		{
-			//»ñÈ¡µÚ iĞĞÊ×ÏñËØÖ¸Õë 
+			//è·å–ç¬¬ iè¡Œé¦–åƒç´ æŒ‡é’ˆ 
 			uchar * p = imgSLIC.ptr<uchar>(j);
-			//¶ÔµÚ iĞĞµÄÃ¿¸öÏñËØ(byte)²Ù×÷ 
+			//å¯¹ç¬¬ iè¡Œçš„æ¯ä¸ªåƒç´ (byte)æ“ä½œ 
 			for (int i = 0; i < width; ++i)
 				p[i] = (unsigned char)(image[j*width + i] & 0xFF);
 		}
@@ -135,10 +106,10 @@ int imgSLIC2openCV(unsigned int *image, int height, int width, int dim, Mat &img
 	else if (dim == 3)
 	{
 		imgSLIC.create(height, width, CV_8UC3);
-		//±éÀúËùÓĞÏñËØ£¬²¢ÉèÖÃÏñËØÖµ 
+		//éå†æ‰€æœ‰åƒç´ ï¼Œå¹¶è®¾ç½®åƒç´ å€¼ 
 		for (int j = 0; j < height; ++j)
 		{
-			//»ñÈ¡µÚ iĞĞÊ×ÏñËØÖ¸Õë 
+			//è·å–ç¬¬ iè¡Œé¦–åƒç´ æŒ‡é’ˆ 
 			Vec3b * p = imgSLIC.ptr<Vec3b>(j);
 			for (int i = 0; i < width; ++i)
 			{
@@ -154,33 +125,8 @@ int imgSLIC2openCV(unsigned int *image, int height, int width, int dim, Mat &img
 	return error;
 }
 
-//±£´æÑµÁ·Ñù±¾±êÇ©
-//pathInÊäÈëÑµÁ·Ñù±¾×ø±ê(x * width + y), pathOutÊä³öÑµÁ·Ñù±¾±êÇ©
-void ReadKlabel(string pathIn, string pathOut, const int* klabels)
-{
-	string line;
-	int num = 0;
-	int i = 0;
-	ifstream infile;
-	infile.open(pathIn, ios::binary | ios::app | ios::in | ios::out);
-
-	ofstream outfile;
-	outfile.open(pathOut, ios::binary | ios::app | ios::in | ios::out);
-	while (getline(infile, line))
-	{
-		istringstream stream(line);
-		int x;
-		while (stream >> x)
-		{
-			//cout << x << endl;
-			outfile << klabels[x] << "\r\n";
-		}
-	}
-	cout << "read over!" << endl;
-}
-
-//»ñÈ¡Í¼ÏñÌØÕ÷Öµ
-//pImage»Ò¶ÈÍ¼Ïñ featureVectorÊä³öÌØÕ÷Öµ
+//è·å–å›¾åƒç‰¹å¾å€¼
+//pImageç°åº¦å›¾åƒ featureVectorè¾“å‡ºç‰¹å¾å€¼
 int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const int* klabels, int width, int height, int kl)
 {
 	int i, j;
@@ -194,21 +140,21 @@ int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const
 	if (NULL == glcm || NULL == histImage)
 		return 2;
 
-	//»Ò¶ÈµÈ¼¶»¯---·ÖGLCM_CLASS¸öµÈ¼¶(Ñ¹ËõÍ¼Ïñ)
+	//ç°åº¦ç­‰çº§åŒ–---åˆ†GLCM_CLASSä¸ªç­‰çº§(å‹ç¼©å›¾åƒ)
 	for (i = 0; i < height; i++)
 	for (j = 0; j < width; j++)
 		histImage[i * width + j] = (int)(pImage[i * width + j] * GLCM_CLASS / 256);
 
-	//³õÊ¼»¯¹²Éú¾ØÕó
+	//åˆå§‹åŒ–å…±ç”ŸçŸ©é˜µ
 	for (i = 0; i < GLCM_CLASS; i++)
 	for (j = 0; j < GLCM_CLASS; j++)
 		glcm[i * GLCM_CLASS + j] = 0;
 
-	//¼ÆËã»Ò¶È¹²Éú¾ØÕó(²»¹æÔòÍ¼Ïñ¿é)
+	//è®¡ç®—ç°åº¦å…±ç”ŸçŸ©é˜µ(ä¸è§„åˆ™å›¾åƒå—)
 	int w, k, l;
 	int kl0 = -1, kl1 = -1, kl2 = -1;
 
-	//Ë®Æ½·½Ïò
+	//æ°´å¹³æ–¹å‘
 	if (angleDirection == GLCM_ANGLE_HORIZATION)
 	{
 		for (int i = 0; i < height; i++)
@@ -222,7 +168,7 @@ int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const
 				{
 					if ((i * width + j + GLCM_DIS) <(width * height))
 						kl1 = klabels[i * width + j + GLCM_DIS];
-					else kl1 = -1;  //Èô²»ÔÚ·Ö¸î¿éÄÚ£¬Ôò¸³Öµ-1£¬£¨²»¸³ÖµÎª-1£¬Ôòkl1»¹ÊÇÉÏÒ»´ÎµÄÖµ£©
+					else kl1 = -1;  //è‹¥ä¸åœ¨åˆ†å‰²å—å†…ï¼Œåˆ™èµ‹å€¼-1ï¼Œï¼ˆä¸èµ‹å€¼ä¸º-1ï¼Œåˆ™kl1è¿˜æ˜¯ä¸Šä¸€æ¬¡çš„å€¼ï¼‰
 					if ((i * width + j - GLCM_DIS) >= 0)
 						kl2 = klabels[i * width + j - GLCM_DIS];
 					else kl2 = -1;
@@ -242,7 +188,7 @@ int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const
 			}
 		}
 	}
-	//´¹Ö±·½Ïò
+	//å‚ç›´æ–¹å‘
 	else if (angleDirection == GLCM_ANGLE_VERTICAL)
 	{
 		for (int i = 0; i < height; i++)
@@ -275,7 +221,7 @@ int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const
 			}
 		}
 	}
-	//¶Ô½Ç·½Ïò
+	//å¯¹è§’æ–¹å‘
 	else if (angleDirection == GLCM_ANGLE_DIGONAL_135)
 	{
 		for (int i = 0; i < height; i++)
@@ -341,7 +287,7 @@ int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const
 		}
 	}
 
-	//¹éÒ»»¯
+	//å½’ä¸€åŒ–
 	float total = 0;
 	for (i = 0; i < GLCM_CLASS; i++)
 	for (j = 0; j < GLCM_CLASS; j++)
@@ -351,24 +297,24 @@ int CalGlCM(int* pImage, GLCM_ANGLE angleDirection, double* featureVector, const
 	for (j = 0; j < GLCM_CLASS; j++)
 		glcm[i * GLCM_CLASS + j] /= total;
 
-	//¼ÆËãÌØÕ÷Öµ
+	//è®¡ç®—ç‰¹å¾å€¼
 	double entropy = 0, energy = 0, contrast = 0, homogenity = 0;
 	for (i = 0; i < GLCM_CLASS; i++)
 	{
 		for (j = 0; j < GLCM_CLASS; j++)
 		{
-			//ìØ
+			//ç†µ
 			if (glcm[i * GLCM_CLASS + j] > 0)
 				entropy -= glcm[i * GLCM_CLASS + j] * log10(double(glcm[i * GLCM_CLASS + j]));
-			//ÄÜÁ¿
+			//èƒ½é‡
 			energy += glcm[i * GLCM_CLASS + j] * glcm[i * GLCM_CLASS + j];
-			//¶Ô±È¶È
+			//å¯¹æ¯”åº¦
 			contrast += (i - j) * (i - j) * glcm[i * GLCM_CLASS + j];
-			//Ò»ÖÂĞÔ
+			//ä¸€è‡´æ€§
 			homogenity += 1.0 / (1 + (i - j) * (i - j)) * glcm[i * GLCM_CLASS + j];
 		}
 	}
-	//·µ»ØÌØÕ÷Öµ
+	//è¿”å›ç‰¹å¾å€¼
 	i = 0;
 	featureVector[i++] = entropy;
 	featureVector[i++] = energy;
@@ -398,32 +344,24 @@ int main()
 	
 	tStart = clock();
 
-	int k = 10000;// ËùĞèµÄ³¬ÏñËØÊı¡£
-	double m = 30;//Compactness factor. use a value ranging from 10 to 40 depending on your needs. Default is 10
+	int k = 10000;// æ‰€éœ€çš„è¶…åƒç´ æ•°ã€‚
+	double m = 30;
 	int* klabels = nullptr;
 	if (0 == klabels) klabels = new int[imgSize];
-	//const int kstep = sqrt(double(imgSize) / double(k));
 
 	// Perform SLIC on the image buffer
 	SLIC segment;
 	segment.PerformSLICO_ForGivenK(image, width, height, klabels, numlabels, k, m);
-	//Alternately one can also use the function PerformSLICO_ForGivenStepSize() for a desired superpixel size
-	//segment.PerformSLICO_ForGivenStepSize(labels, width, height, klabels, numlabels, kstep, m);
 
-	//½«±êÇ©±£´æµ½ÎÄ±¾ÎÄ¼şÖĞ
-	/*string filename = "1.jpg";
-	string savepath = "yourpathname1";
-	segment.SaveSuperpixelLabels(klabels, width, height, filename, savepath);*/
-
-	// »æÖÆ±ß½ç
+	// ç»˜åˆ¶è¾¹ç•Œ
 	segment.DrawContoursAroundSegments(image, klabels, width, height, 0xff0000);
 
-    //³õÊ¼±êÇ©±£´æ
+        //åˆå§‹æ ‡ç­¾ä¿å­˜
 	ofstream outfile;
 	outfile.open("klabels1-10000", ios::binary | ios::app | ios::in | ios::out);
 	for (int j = 0; j < height; ++j)
 	{
-		//»ñÈ¡µÚ iĞĞÊ×ÏñËØÖ¸Õë 
+		//è·å–ç¬¬ iè¡Œé¦–åƒç´ æŒ‡é’ˆ 
 		for (int i = 0; i < width; ++i)
 		{
 			int index = j*width + i;
@@ -441,7 +379,7 @@ int main()
 	tEnd = clock();
 	exeT = tEnd - tStart;
 
-	//RGB2Gray ²¢½«ÏñËØÖµ±£´æÖÁ»º´æ±äÁ¿grayÖĞ
+	//RGB2Gray å¹¶å°†åƒç´ å€¼ä¿å­˜è‡³ç¼“å­˜å˜é‡grayä¸­
 	Mat imgGray;
 	cvtColor(imgRGB, imgGray, CV_BGR2GRAY);
 	int *gray = new int[imgSize];
@@ -450,11 +388,11 @@ int main()
 	{
 		gray[i * width + j] = (int)imgGray.at<uchar>(i,j);
 	}
-	//¼ÆËã·Ö¸î¿éµÄÌØÕ÷Öµ
+	//è®¡ç®—åˆ†å‰²å—çš„ç‰¹å¾å€¼
 	double* featureVector = new double[4];
 	ofstream featureFile;
 	featureFile.open("featureFile-all-10000.txt", ios::binary | ios::app | ios::in | ios::out);
-	for (int kl = 0; kl < k; kl++)    //ÓÃ±êÇ©±éÀúÃ¿Ò»¸ö·Ö¸î¿é
+	for (int kl = 0; kl < k; kl++)    //ç”¨æ ‡ç­¾éå†æ¯ä¸€ä¸ªåˆ†å‰²å—
 	{
 		float entropy = 0, energy = 0, contrast = 0,homogenity = 0;
 		CalGlCM(gray, GLCM_ANGLE_HORIZATION, featureVector, klabels, width, height, kl);
@@ -473,25 +411,11 @@ int main()
 		featureFile << entropy << " " << energy << " " << contrast << " " << homogenity << "\r\n";
 	}
 	if (featureVector) delete[] featureVector;
-
-	//»ñÈ¡ÑµÁ·Ñù±¾×ø±ê
-	/*src = cvLoadImage("SLIC Segmentation1-10000.jpg", 1); //¶ÁÈëÍ¼Ïñ
-	cvNamedWindow("src", 1);//ĞÂ½¨´°¿Ú  
-	cvSetMouseCallback("src", on_mouse, 0);  //×¢²áÊó±êÏàÓ¦»Øµ÷º¯Êı 
-	cvShowImage("src", src);
-	cvWaitKey(0);
-	cvDestroyAllWindows();//Ïú»ÙËùÓĞ´°¿Ú  
-	cvReleaseImage(&src);//ÊÍ·ÅÍ¼ÏñÊı¾İ 
-
-	//»ñÈ¡¶ÔÓ¦ÑµÁ·Ñù±¾±êÇ©
-	ReadKlabel("examplepoint-daolu-10000-result","klabels-10000-daolu", klabels);*/
-
 	if (klabels) delete[] klabels;
-	//if (gray) delete[] gray;
 
-	//½á¹ûÏÔÊ¾
-    /*cout << "SLICÖ´ĞĞÊ±¼äexeT£º" << exeT << "ºÁÃë" << endl;
-	imshow("imgSLIC", ReImgSLIC);*/
+	//ç»“æœæ˜¾ç¤º
+        cout << "SLICæ‰§è¡Œæ—¶é—´exeTï¼š" << exeT << "æ¯«ç§’" << endl;
+	imshow("imgSLIC", ReImgSLIC);
 	imwrite("SLIC Segmentation1-10000.jpg", ReImgSLIC);
 	cout << "over!";
 	getchar();
